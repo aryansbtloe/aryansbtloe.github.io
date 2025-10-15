@@ -1,0 +1,949 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generate Interactive Resume PDF</title>
+    <style>
+        /* PDF Resume Styles */
+        @page {
+            size: A4;
+            margin: 0;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: #0d0d0d;
+            padding: 20px;
+        }
+        
+        .resume-container {
+            max-width: 210mm;
+            margin: 0 auto;
+            background: #1a1a1a;
+            box-shadow: 0 2px 20px rgba(0,0,0,0.5);
+        }
+        
+        .resume-page {
+            width: 210mm;
+            min-height: 297mm;
+            padding: 18mm;
+            background: #1a1a1a;
+            color: #e8e8e8;
+            page-break-after: auto;
+        }
+        
+        .resume-page:last-child {
+            page-break-after: auto;
+        }
+        
+        /* Header Section */
+        .resume-header {
+            border-bottom: 3px solid #60a5fa;
+            padding-bottom: 16px;
+            margin-bottom: 18px;
+            position: relative;
+        }
+        
+        .portfolio-qr {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 60px;
+            height: 60px;
+            background: white;
+            border-radius: 8px;
+            padding: 4px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+        
+        .portfolio-qr img {
+            width: 100%;
+            height: 100%;
+            border-radius: 4px;
+        }
+        
+        .resume-name {
+            font-size: 32px;
+            font-weight: 700;
+            color: #ffffff;
+            margin-bottom: 8px;
+        }
+        
+        .resume-title {
+            font-size: 18px;
+            color: #60a5fa;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+        
+        .resume-tagline {
+            font-size: 13px;
+            color: #a0a0a0;
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+        
+        .contact-info {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            font-size: 11px;
+            color: #e8e8e8;
+        }
+        
+        .contact-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .contact-item a {
+            color: #60a5fa;
+            text-decoration: none;
+        }
+        
+        /* Summary Section */
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-bottom: 18px;
+        }
+        
+        .summary-box {
+            background: linear-gradient(135deg, #60a5fa 0%, #2563eb 100%);
+            color: white;
+            padding: 12px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .summary-box-label {
+            font-size: 9px;
+            opacity: 0.9;
+            margin-bottom: 4px;
+        }
+        
+        .summary-box-value {
+            font-size: 16px;
+            font-weight: 700;
+        }
+        
+        /* Section Styles */
+        .section {
+            margin-bottom: 18px;
+        }
+        
+        .section-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: #ffffff;
+            margin-bottom: 12px;
+            padding-bottom: 6px;
+            border-bottom: 2px solid #60a5fa;
+        }
+        
+        .section-title a {
+            color: #60a5fa;
+        }
+        
+        /* Skills Grid */
+        .skills-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+        
+        .skill-item {
+            background: #252525;
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 10px;
+            border: 1px solid #333;
+        }
+        
+        .skill-title {
+            font-weight: 600;
+            color: #ffffff;
+            margin-bottom: 4px;
+        }
+        
+        .skill-desc {
+            color: #a0a0a0;
+            font-size: 9px;
+            line-height: 1.4;
+        }
+        
+        /* Experience */
+        .experience-item {
+            margin-bottom: 14px;
+            page-break-inside: auto;
+            break-inside: auto;
+        }
+        
+        .experience-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 8px;
+        }
+        
+        .experience-left {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+        
+        .company-logo {
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            object-fit: contain;
+            background: #f5f5f7;
+            padding: 4px;
+            flex-shrink: 0;
+        }
+        
+        .experience-company {
+            font-size: 13px;
+            font-weight: 700;
+            color: #ffffff;
+        }
+        
+        .experience-period {
+            font-size: 10px;
+            color: #a0a0a0;
+            white-space: nowrap;
+        }
+        
+        .experience-title {
+            font-size: 11px;
+            color: #60a5fa;
+            font-weight: 600;
+            margin-bottom: 2px;
+        }
+        
+        .experience-location {
+            font-size: 9px;
+            color: #a0a0a0;
+            margin-bottom: 6px;
+        }
+        
+        .experience-list {
+            list-style: none;
+            padding-left: 0;
+        }
+        
+        .experience-list li {
+            font-size: 10px;
+            color: #e8e8e8;
+            line-height: 1.5;
+            margin-bottom: 4px;
+            padding-left: 12px;
+            position: relative;
+        }
+        
+        .experience-list li::before {
+            content: "•";
+            position: absolute;
+            left: 0;
+            color: #60a5fa;
+            font-weight: bold;
+        }
+        
+        /* Keyword highlighting - simplified */
+        .highlight {
+            background: #60a5fa;
+            color: white;
+            padding: 1px 4px;
+            border-radius: 3px;
+            font-weight: 600;
+            font-size: 0.95em;
+        }
+        
+        .achievements {
+            margin-top: 6px;
+        }
+        
+        .achievements-title {
+            font-size: 10px;
+            font-weight: 600;
+            color: #ffffff;
+            margin-bottom: 4px;
+        }
+        
+        .achievement-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+        
+        .achievement-tag {
+            background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%);
+            color: white;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 8px;
+            font-weight: 500;
+        }
+        
+        /* Technical Skills */
+        .tech-category {
+            margin-bottom: 10px;
+        }
+        
+        .tech-category-title {
+            font-size: 11px;
+            font-weight: 600;
+            color: #ffffff;
+            margin-bottom: 4px;
+        }
+        
+        .tech-items {
+            font-size: 10px;
+            color: #a0a0a0;
+            line-height: 1.5;
+        }
+        
+        .tech-items a {
+            color: #60a5fa;
+            text-decoration: none;
+        }
+        
+        /* Open Source & Community */
+        .open-source-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+        }
+        
+        .open-source-item {
+            background: #252525;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid #333;
+        }
+        
+        .open-source-title {
+            font-size: 11px;
+            font-weight: 600;
+            color: #ffffff;
+            margin-bottom: 4px;
+        }
+        
+        .open-source-desc {
+            font-size: 9px;
+            color: #a0a0a0;
+            margin-bottom: 6px;
+        }
+        
+        .open-source-link a {
+            font-size: 9px;
+            color: #60a5fa;
+            text-decoration: none;
+        }
+        
+        /* Apps Grid */
+        .apps-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+        }
+        
+        .app-item {
+            background: #252525;
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 9px;
+            text-align: center;
+            border: 1px solid #333;
+            page-break-inside: avoid;
+            break-inside: avoid;
+        }
+        
+        .app-name {
+            font-weight: 600;
+            color: #ffffff;
+            margin-bottom: 3px;
+        }
+        
+        .app-category {
+            color: #a0a0a0;
+            font-size: 8px;
+            margin-bottom: 3px;
+        }
+        
+        .app-rating {
+            color: #60a5fa;
+            font-size: 8px;
+        }
+        
+        /* Product logos */
+        .product-logo-large {
+            width: 48px;
+            height: 48px;
+            border-radius: 8px;
+            object-fit: contain;
+            background: white;
+            padding: 6px;
+            margin: 0 auto 8px auto;
+            display: block;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+        
+        /* Footer */
+        .resume-footer {
+            margin-top: 20px;
+            padding-top: 12px;
+            border-top: 1px solid #333;
+            text-align: center;
+            font-size: 9px;
+            color: #808080;
+        }
+        
+        /* QR Code Section */
+        .qr-section {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 20px;
+            padding: 15px;
+            background: #252525;
+            border-radius: 8px;
+            border: 1px solid #333;
+        }
+        
+        .qr-item {
+            text-align: center;
+        }
+        
+        .qr-label {
+            font-size: 9px;
+            color: #a0a0a0;
+            margin-top: 8px;
+        }
+        
+        /* Print Styles */
+        @media print {
+            body {
+                background: #1a1a1a !important;
+                padding: 0;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            
+            .resume-container {
+                box-shadow: none;
+            }
+            
+            .resume-page {
+                background: #1a1a1a !important;
+                color: #e8e8e8 !important;
+            }
+            
+            .no-print {
+                display: none;
+            }
+        }
+        
+        /* Control Panel */
+        .control-panel {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #252525;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+            border: 1px solid #333;
+            z-index: 1000;
+        }
+        
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 12px 20px;
+            margin-bottom: 10px;
+            background: #60a5fa;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        
+        .btn:hover {
+            background: #3b82f6;
+        }
+        
+        .btn-secondary {
+            background: #3a3a3a;
+            color: #e8e8e8;
+        }
+        
+        .btn-secondary:hover {
+            background: #4a4a4a;
+        }
+    </style>
+</head>
+<body>
+    <!-- Control Panel -->
+    <div class="control-panel no-print">
+        <button class="btn" onclick="window.print()">📄 Print as PDF</button>
+        <button class="btn btn-secondary" onclick="downloadPDF()">💾 Download PDF</button>
+        <button class="btn btn-secondary" onclick="addQRCodes()">📱 Add QR Codes</button>
+    </div>
+
+    <!-- Resume Container -->
+    <div class="resume-container" id="resumeContent">
+        <!-- Page 1 -->
+        <div class="resume-page">
+            <!-- Header -->
+            <div class="resume-header">
+                <div class="portfolio-qr">
+                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=https://aryansbtloe.github.io/" alt="Portfolio QR Code">
+                </div>
+                <h1 class="resume-name">Alok Singh</h1>
+                <div class="resume-title">Senior Software Engineer at Grab</div>
+                <div class="resume-tagline">10+ Years of iOS Excellence | Swift, SwiftUI, Objective-C | Building Scalable Apps</div>
+                <div class="contact-info">
+                    <div class="contact-item">
+                        📧 <a href="mailto:alok.singh.confident@gmail.com">alok.singh.confident@gmail.com</a>
+                    </div>
+                    <div class="contact-item">
+                        📱 +91 8287757210
+                    </div>
+                    <div class="contact-item">
+                        📍 Bangalore, India
+                    </div>
+                    <div class="contact-item">
+                        💼 <a href="https://www.linkedin.com/in/256261/">LinkedIn</a> · 19,000+ followers
+                    </div>
+                    <div class="contact-item">
+                        🐙 <a href="https://github.com/aryansbtloe">GitHub</a>
+                    </div>
+                    <div class="contact-item">
+                        🌐 <a href="https://aryansbtloe.github.io/">Portfolio</a>
+                    </div>
+                    <div class="contact-item">
+                        📱 <a href="https://apps.apple.com/us/developer/alok-singh/id1508795536">App Store</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Summary Cards -->
+            <div class="summary-grid">
+                <div class="summary-box">
+                    <div class="summary-box-label">Total Experience</div>
+                    <div class="summary-box-value">10+ Years</div>
+                </div>
+                <div class="summary-box">
+                    <div class="summary-box-label">iOS Development</div>
+                    <div class="summary-box-value">10+ Years</div>
+                </div>
+                <div class="summary-box">
+                    <div class="summary-box-label">Swift Expertise</div>
+                    <div class="summary-box-value">8+ Years</div>
+                </div>
+                <div class="summary-box">
+                    <div class="summary-box-label">Education</div>
+                    <div class="summary-box-value">B. Tech | ECE</div>
+                </div>
+                <div class="summary-box">
+                    <div class="summary-box-label">LinkedIn Followers</div>
+                    <div class="summary-box-value">19K+</div>
+                </div>
+            </div>
+
+            <!-- Skills Section -->
+            <div class="section">
+                <h2 class="section-title">Core Competencies</h2>
+                <div class="skills-grid">
+                    <div class="skill-item">
+                        <div class="skill-title">📱 iOS Development</div>
+                        <div class="skill-desc">Swift, SwiftUI, UIKit, Objective-C, 18 Apps</div>
+                    </div>
+                    <div class="skill-item">
+                        <div class="skill-title">⚡ Architecture</div>
+                        <div class="skill-desc">MVVM, VIPER, Coordinators, Clean Architecture</div>
+                    </div>
+                    <div class="skill-item">
+                        <div class="skill-title">🔄 Frameworks</div>
+                        <div class="skill-desc">Combine, Concurrency, Core Data, Realm</div>
+                    </div>
+                    <div class="skill-item">
+                        <div class="skill-title">🚀 CI/CD & Tools</div>
+                        <div class="skill-desc">Fastlane, Xcode Cloud, GitHub Actions</div>
+                    </div>
+                    <div class="skill-item">
+                        <div class="skill-title">🤖 Modern Tech</div>
+                        <div class="skill-desc">AI, Flutter, React Native</div>
+                    </div>
+                    <div class="skill-item">
+                        <div class="skill-title">📊 Analytics</div>
+                        <div class="skill-desc">Firebase, DataDog, Moengage, Singular</div>
+                    </div>
+                </div>
+            </div>
+
+
+            <!-- Professional Experience -->
+            <div class="section">
+                <h2 class="section-title">Professional Experience</h2>
+                
+                <!-- Grab -->
+                <div class="experience-item">
+                    <div class="experience-header">
+                        <div class="experience-left">
+                            <img src="https://logo.clearbit.com/grab.com?size=64" alt="Grab" class="company-logo" onerror="this.style.display='none'">
+                            <div>
+                                <div class="experience-company">Grab</div>
+                                <div class="experience-title">Senior Software Engineer</div>
+                                <div class="experience-location">📍 Singapore/Bangalore • Full-time</div>
+                            </div>
+                        </div>
+                        <div class="experience-period">Jan 2021 – Present</div>
+                    </div>
+                    <ul class="experience-list">
+                        <li>Revamped <span class="highlight">legacy modules</span> across Consumer, Driver, and Merchant apps, improving performance, maintainability, and developer experience</li>
+                        <li>Enhanced code quality by significantly improving <span class="highlight">Unit test, UI test, and snapshot test coverage</span></li>
+                        <li>Led end-to-end <span class="highlight">CI/CD development</span>, establishing efficient pipelines to support continuous integration, automated testing, and smooth deployment workflows</li>
+                        <li>Collaborated cross-functionally with product managers, designers, and other engineering teams to design and implement <span class="highlight">scalable software solutions using RIB, MVVM, VIPER, and Clean Architecture</span>, boosting system performance and user satisfaction</li>
+                        <li>Mentored <span class="highlight">junior engineers</span>, encouraging growth through code reviews, technical guidance, and promoting Agile and software development best practices</li>
+                        <li>Translated complex requirements into functional features, streamlining delivery timelines and ensuring alignment with product goals</li>
+                        <li>Conducted regular <span class="highlight">code reviews</span>, implementing QA measures that increased code quality and reduced production issues</li>
+                        <li>Led <span class="highlight">system migrations</span> from legacy architectures to modern solutions, improving scalability and reducing long-term operational costs</li>
+                        <li>Integrated <span class="highlight">modern payment methods</span>, expanding financial functionality and improving the overall payment experience for users</li>
+                        <li>Troubleshot and resolved complex technical issues, improving system reliability and user experience</li>
+                        <li>Managed multiple high-impact projects simultaneously, maintaining strict deadlines while upholding high-quality standards</li>
+                        <li>Acted as an active code reviewer, maintaining code consistency and engineering excellence across teams</li>
+                        <li>Led patenting meetings as the <span class="highlight">patent champion</span>, fostering a culture of innovation and IP development</li>
+                    </ul>
+                    <div class="achievements">
+                        <div class="achievements-title">🏆 Key Achievements:</div>
+                        <div class="achievement-tags">
+                            <span class="achievement-tag">Patent Champion - Led innovation initiatives</span>
+                            <span class="achievement-tag">Improved CI/CD efficiency by 40%</span>
+                            <span class="achievement-tag">Reduced production issues by 50% through code reviews</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- OYO -->
+                <div class="experience-item" style="margin-bottom: 8px;">
+                    <div class="experience-header">
+                        <div class="experience-left">
+                            <img src="https://logo.clearbit.com/oyorooms.com?size=64" alt="OYO" class="company-logo" onerror="this.style.display='none'">
+                            <div>
+                                <div class="experience-company">OYO</div>
+                                <div class="experience-title">SDE 3 · iOS, Backend</div>
+                                <div class="experience-location">📍 Gurugram, India • Full-time</div>
+                            </div>
+                        </div>
+                        <div class="experience-period">Nov 2018 – Jan 2021</div>
+                    </div>
+                    <ul class="experience-list">
+                        <li>Individual contributor responsible for core development of OYO's consumer-facing iOS app in a fast-paced, large-scale environment</li>
+                        <li>Led multiple major product revamps over 2 years, resulting in significantly improved user experience and app performance</li>
+                        <li>Improved <span class="highlight">App Store rating from 3.7 to 4.7</span>, driven by UX improvements, crash reduction, and performance enhancements</li>
+                        <li>Implemented <span class="highlight">unit testing infrastructure</span>, increasing code coverage from 4% to 32%, greatly improving reliability and confidence in code changes</li>
+                        <li>Enhanced app architecture by introducing and refining <span class="highlight">VIPER, MVVM, RIB, and Clean Architecture</span>, improving modularity, testability, and long-term maintainability</li>
+                        <li>Strengthened app security through implementation of SSL pinning and fraud detection mechanisms</li>
+                        <li>Contributed to widgetization and modularization, improving feature scalability and reducing code duplication</li>
+                        <li>Maintained <span class="highlight">>99.97% crash-free sessions</span>, improving app stability and reducing user complaints</li>
+                        <li>Mentored <span class="highlight">10+ engineers</span>, providing guidance on architecture, code quality, Agile methodologies, and best practices</li>
+                        <li>Led API stability and performance improvements, ensuring a smooth and responsive user experience</li>
+                        <li>Owned end-to-end iOS release lifecycle — from development, testing, and deployment to App Store submission, crash analysis, and stability monitoring</li>
+                        <li>Developed scalable iOS applications using Swift, increasing user engagement and retention</li>
+                        <li>Collaborated with cross-functional teams to design and implement RESTful APIs, enhancing backend reliability and app performance</li>
+                    </ul>
+                    <div class="achievements" style="margin-top: 4px;">
+                        <div class="achievements-title">🏆 Key Achievements:</div>
+                        <div class="achievement-tags">
+                            <span class="achievement-tag">App Store Rating: 3.7 → 4.7 (27% improvement)</span>
+                            <span class="achievement-tag">Test Coverage: 4% → 32% (700% increase)</span>
+                            <span class="achievement-tag">Crash-free Sessions: >99.97%</span>
+                            <span class="achievement-tag">Mentored 10+ engineers</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Page 2 -->
+        <div class="resume-page">
+            <!-- More Experience -->
+            <div class="section">
+                
+                <!-- Previous Experiences -->
+                <div class="experience-item">
+                    <div class="experience-header">
+                        <div class="experience-left">
+                            <img src="logos/default.svg" alt="Previous Companies" class="company-logo" onerror="this.style.display='none'">
+                            <div>
+                                <div class="experience-company">Previous Experiences</div>
+                                <div class="experience-title">iOS Developer · Sr. iOS Developer</div>
+                                <div class="experience-location">📍 India • Full-time</div>
+                            </div>
+                        </div>
+                        <div class="experience-period">Apr 2011 – Nov 2018</div>
+                    </div>
+                    <div style="font-size: 10px; color: #6e6e73; margin-bottom: 8px; font-style: italic;">
+                        GlobalLogic (Sep 2017 – Nov 2018) • Orahi (Feb 2016 – Sep 2017) • AppInventiv (Feb 2014 – Feb 2016) • Konstant Infosolutions (Mar 2013 – Feb 2014) • Ayansys Solutions (Apr 2011 – Mar 2013)
+                    </div>
+                    <ul class="experience-list">
+                        <li>Led end-to-end iOS application development as a standalone contributor, from architecture and UI/UX design to deployment and maintenance</li>
+                        <li>Collaborated with cross-functional teams including designers, backend engineers, and business analysts to deliver feature-rich, high-performance applications</li>
+                        <li>Participated in UI design and user behavior analysis, contributing to data-driven decisions for feature enhancements and customer experience improvements</li>
+                        <li>Designed and optimized <span class="highlight">fraud detection algorithms</span> and improved app security practices</li>
+                        <li>Actively involved in pre-sales efforts, assisting the business analysis team in gathering requirements, evaluating technical feasibility, and scoping projects</li>
+                        <li>Played a key role in <span class="highlight">hiring and onboarding</span>, conducting interviews, evaluating new graduates, and mentoring junior developers</li>
+                        <li>Contributed to software architecture discussions, driving decisions around best practices for <span class="highlight">scalable, maintainable codebases using RIB, MVVM, VIPER, and Clean Architecture</span></li>
+                        <li>Advocated for creativity in UI/UX, regularly enhancing the visual and interactive elements of applications without constraint</li>
+                        <li>Ensured high product quality through rigorous testing and debugging, maintaining stability across releases</li>
+                        <li>Adapted quickly in fast-paced, competitive environments, taking full ownership of deliverables and continuously seeking to improve code quality and user satisfaction</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Technical Skills -->
+            <div class="section">
+                <h2 class="section-title">Technical Skills</h2>
+                <div class="tech-category">
+                    <div class="tech-category-title">Languages:</div>
+                    <div class="tech-items">Swift, Objective-C, Java, C++, C, Flutter</div>
+                </div>
+                <div class="tech-category">
+                    <div class="tech-category-title">Platforms:</div>
+                    <div class="tech-items">iOS, macOS, Symbian (S60), Qt, React Native, SpringBoot</div>
+                </div>
+                <div class="tech-category">
+                    <div class="tech-category-title">Tools & Technologies:</div>
+                    <div class="tech-items">Xcode, IntelliJ, VS Code, Charles, Postman, SQLite, Core Data, Realm, MySQL</div>
+                </div>
+                <div class="tech-category">
+                    <div class="tech-category-title">CI/CD & Quality:</div>
+                    <div class="tech-items">Fastlane, SonarCube, GitHub Actions, Xcode Cloud, Google Analytics, Firebase, DataDog</div>
+                </div>
+            </div>
+
+            <!-- Open Source & Community -->
+            <div class="section">
+                <h2 class="section-title">Open Source & Community</h2>
+                <div class="open-source-grid">
+                    <div class="open-source-item">
+                        <div class="open-source-title">🐙 GitHub</div>
+                        <div class="open-source-desc">Public repositories and community contributions</div>
+                        <div class="open-source-link"><a href="https://github.com/aryansbtloe" target="_blank">github.com/aryansbtloe</a></div>
+                    </div>
+                    <div class="open-source-item">
+                        <div class="open-source-title">📱 Cocoa Controls</div>
+                        <div class="open-source-desc">iOS UI components contributor</div>
+                        <div class="open-source-link"><a href="https://www.cocoacontrols.com/controls?q=alok+singh" target="_blank">cocoacontrols.com</a></div>
+                    </div>
+                    <div class="open-source-item">
+                        <div class="open-source-title">📝 Blog</div>
+                        <div class="open-source-desc">iOS development insights & tutorials</div>
+                        <div class="open-source-link"><a href="https://medium.com/@alok.singh.confident" target="_blank">medium.com/@alok.singh.confident</a></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Published Apps -->
+            <div class="section" style="page-break-before: avoid; page-break-inside: auto; margin-top: 10px;">
+                <h2 class="section-title">My Apps on App Store (18 Personal Apps Published) · <a href="https://apps.apple.com/us/developer/alok-singh/id1508795536" style="font-size: 10px; font-weight: 400;">View All →</a></h2>
+                <div class="apps-grid" style="page-break-inside: auto;">
+                    <!-- 5.0 star apps -->
+                    <a href="https://apps.apple.com/us/app/exotic-wallpapers-hd/id6443850234?uo=4" target="_blank" rel="noopener" class="app-item" style="padding: 12px; text-decoration: none; color: inherit; display: block;">
+                        <img src="logos/apps/exotic-wallpapers.jpg" alt="Exotic Wallpapers" class="product-logo-large" onerror="this.style.display='none'">
+                        <div class="app-name">Exotic Wallpapers HD</div>
+                        <div class="app-category">Photo & Video · FREE</div>
+                        <div class="app-rating">⭐ 5.0 (4 reviews)</div>
+                    </a>
+                    <a href="https://apps.apple.com/us/app/marbles-popperz/id1601511276?uo=4" target="_blank" rel="noopener" class="app-item" style="padding: 12px; text-decoration: none; color: inherit; display: block;">
+                        <img src="logos/apps/marbles-popperz.jpg" alt="Marbles Popperz" class="product-logo-large" onerror="this.style.display='none'">
+                        <div class="app-name">Marbles Popperz</div>
+                        <div class="app-category">Games · FREE</div>
+                        <div class="app-rating">⭐ 5.0 (2 reviews)</div>
+                    </a>
+                    <a href="https://apps.apple.com/us/app/speck-match/id1600688336?uo=4" target="_blank" rel="noopener" class="app-item" style="padding: 12px; text-decoration: none; color: inherit; display: block;">
+                        <img src="logos/apps/speck-match.jpg" alt="Speck Match" class="product-logo-large" onerror="this.style.display='none'">
+                        <div class="app-name">Speck Match</div>
+                        <div class="app-category">Games · FREE</div>
+                        <div class="app-rating">⭐ 5.0 (1 review)</div>
+                    </a>
+                    
+                    <!-- 4.75 star apps -->
+                    <a href="https://apps.apple.com/us/app/haptics-explorer/id1660403082?uo=4" target="_blank" rel="noopener" class="app-item" style="padding: 12px; text-decoration: none; color: inherit; display: block;">
+                        <img src="logos/apps/haptics-explorer.jpg" alt="Haptics Explorer" class="product-logo-large" onerror="this.style.display='none'">
+                        <div class="app-name">Haptics Explorer</div>
+                        <div class="app-category">Developer Tools · FREE</div>
+                        <div class="app-rating">⭐ 4.8 (4 reviews)</div>
+                    </a>
+                    <a href="https://apps.apple.com/us/app/facts-and-quotes/id1607878544?uo=4" target="_blank" rel="noopener" class="app-item" style="padding: 12px; text-decoration: none; color: inherit; display: block;">
+                        <img src="logos/apps/facts-and-quotes.jpg" alt="Facts and Quotes" class="product-logo-large" onerror="this.style.display='none'">
+                        <div class="app-name">Facts and Quotes</div>
+                        <div class="app-category">Health & Fitness · FREE</div>
+                        <div class="app-rating">⭐ 4.8 (4 reviews)</div>
+                    </a>
+                    
+                    <!-- 4.7 star apps -->
+                    <a href="https://apps.apple.com/us/app/currency-converter-fast/id1509291290?uo=4" target="_blank" rel="noopener" class="app-item" style="padding: 12px; text-decoration: none; color: inherit; display: block;">
+                        <img src="logos/apps/currency-converter.jpg" alt="Currency Converter" class="product-logo-large" onerror="this.style.display='none'">
+                        <div class="app-name">Currency Converter: Fast</div>
+                        <div class="app-category">Finance · FREE</div>
+                        <div class="app-rating">⭐ 4.7 (7 reviews)</div>
+                    </a>
+                    <a href="https://apps.apple.com/us/app/medicine-tracker-n-reminder/id1660782134?uo=4" target="_blank" rel="noopener" class="app-item" style="padding: 12px; text-decoration: none; color: inherit; display: block;">
+                        <img src="logos/apps/medicine-tracker.jpg" alt="Medicine Tracker" class="product-logo-large" onerror="this.style.display='none'">
+                        <div class="app-name">Medicine Tracker</div>
+                        <div class="app-category">Medical · FREE</div>
+                        <div class="app-rating">⭐ 4.7 (6 reviews)</div>
+                    </a>
+                    
+                    <!-- 3.8 star apps -->
+                    <a href="https://apps.apple.com/us/app/tic-tac-toe-time-pass/id1509555889?uo=4" target="_blank" rel="noopener" class="app-item" style="padding: 12px; text-decoration: none; color: inherit; display: block;">
+                        <img src="logos/apps/tic-tac-toe.jpg" alt="Tic Tac Toe" class="product-logo-large" onerror="this.style.display='none'">
+                        <div class="app-name">Tic Tac Toe: Time Pass</div>
+                        <div class="app-category">Games · FREE</div>
+                        <div class="app-rating">⭐ 3.8 (13 reviews)</div>
+                    </a>
+                    
+                    <!-- New releases -->
+                    <a href="https://apps.apple.com/us/app/ui-catalogue/id6476453969?uo=4" target="_blank" rel="noopener" class="app-item" style="padding: 12px; text-decoration: none; color: inherit; display: block;">
+                        <img src="logos/apps/ui-catalogue.jpg" alt="UI Catalogue" class="product-logo-large" onerror="this.style.display='none'">
+                        <div class="app-name">UI Catalogue</div>
+                        <div class="app-category">Developer Tools · FREE</div>
+                        <div class="app-rating">⭐ Available</div>
+                    </a>
+                    <a href="https://apps.apple.com/us/app/data-structure-with-algorithms/id6475613341?uo=4" target="_blank" rel="noopener" class="app-item" style="padding: 12px; text-decoration: none; color: inherit; display: block;">
+                        <img src="logos/apps/data-structure.jpg" alt="Data Structures" class="product-logo-large" onerror="this.style.display='none'">
+                        <div class="app-name">Data Structures & Algorithms</div>
+                        <div class="app-category">Education · FREE</div>
+                        <div class="app-rating">⭐ Available</div>
+                    </a>
+                    <a href="https://apps.apple.com/us/app/drums-n-piano/id6449846127?uo=4" target="_blank" rel="noopener" class="app-item" style="padding: 12px; text-decoration: none; color: inherit; display: block;">
+                        <img src="logos/apps/drums-piano.jpg" alt="Drums n Piano" class="product-logo-large" onerror="this.style.display='none'">
+                        <div class="app-name">Drums n Piano</div>
+                        <div class="app-category">Music · FREE</div>
+                        <div class="app-rating">⭐ Available</div>
+                    </a>
+                    <a href="https://apps.apple.com/us/app/scan-via-cam/id6446734025?uo=4" target="_blank" rel="noopener" class="app-item" style="padding: 12px; text-decoration: none; color: inherit; display: block;">
+                        <img src="logos/apps/scan-via-cam.jpg" alt="Scan Via Cam" class="product-logo-large" onerror="this.style.display='none'">
+                        <div class="app-name">Scan Via Cam</div>
+                        <div class="app-category">Productivity · FREE</div>
+                        <div class="app-rating">⭐ Available</div>
+                    </a>
+                    <a href="https://apps.apple.com/us/app/hashtags-creator/id6443919360?uo=4" target="_blank" rel="noopener" class="app-item" style="padding: 12px; text-decoration: none; color: inherit; display: block;">
+                        <img src="logos/apps/hashtags-creator.jpg" alt="Hashtags Creator" class="product-logo-large" onerror="this.style.display='none'">
+                        <div class="app-name">Hashtags Creator</div>
+                        <div class="app-category">Social Networking · FREE</div>
+                        <div class="app-rating">⭐ Available</div>
+                    </a>
+                    <a href="https://apps.apple.com/us/app/tuner-chromatic-guitar-tuner/id6444090815?uo=4" target="_blank" rel="noopener" class="app-item" style="padding: 12px; text-decoration: none; color: inherit; display: block;">
+                        <img src="logos/apps/tuner.jpg" alt="Tuner" class="product-logo-large" onerror="this.style.display='none'">
+                        <div class="app-name">Tuner - Chromatic Guitar Tuner</div>
+                        <div class="app-category">Utilities · FREE</div>
+                        <div class="app-rating">⭐ Available</div>
+                    </a>
+                    <a href="https://apps.apple.com/us/app/push-notification-client/id1569935047?uo=4" target="_blank" rel="noopener" class="app-item" style="padding: 12px; text-decoration: none; color: inherit; display: block;">
+                        <img src="logos/apps/push-notification.jpg" alt="Push Notification" class="product-logo-large" onerror="this.style.display='none'">
+                        <div class="app-name">Push Notification - Client</div>
+                        <div class="app-category">Developer Tools · FREE</div>
+                        <div class="app-rating">⭐ Available</div>
+                    </a>
+                    <a href="https://apps.apple.com/us/app/converter-units/id1569764832?uo=4" target="_blank" rel="noopener" class="app-item" style="padding: 12px; text-decoration: none; color: inherit; display: block;">
+                        <img src="logos/apps/converter-units.jpg" alt="Converter Units" class="product-logo-large" onerror="this.style.display='none'">
+                        <div class="app-name">Converter : Units</div>
+                        <div class="app-category">Productivity · FREE</div>
+                        <div class="app-rating">⭐ Available</div>
+                    </a>
+                    <a href="https://apps.apple.com/us/app/mic-to-speaker-virtual-mic/id1569763953?uo=4" target="_blank" rel="noopener" class="app-item" style="padding: 12px; text-decoration: none; color: inherit; display: block;">
+                        <img src="logos/apps/mic-to-speaker.jpg" alt="Mic to Speaker" class="product-logo-large" onerror="this.style.display='none'">
+                        <div class="app-name">Mic to Speaker - Virtual Mic</div>
+                        <div class="app-category">Music · FREE</div>
+                        <div class="app-rating">⭐ Available</div>
+                    </a>
+                    <a href="https://apps.apple.com/us/app/daily-pills-reminder/id1561768913?uo=4" target="_blank" rel="noopener" class="app-item" style="padding: 12px; text-decoration: none; color: inherit; display: block;">
+                        <img src="logos/apps/daily-pills.jpg" alt="Daily Pills" class="product-logo-large" onerror="this.style.display='none'">
+                        <div class="app-name">Daily Pills : Reminder</div>
+                        <div class="app-category">Health & Fitness · FREE</div>
+                        <div class="app-rating">⭐ Available</div>
+                    </a>
+                </div>
+            </div>
+
+            <!-- QR Codes Section (will be added dynamically) -->
+            <div id="qrCodesSection" style="display: none; page-break-inside: avoid;">
+                <div class="section">
+                    <h2 class="section-title">Quick Access</h2>
+                    <div class="qr-section">
+                        <div class="qr-item">
+                            <img id="qrPortfolio" width="80" height="80" alt="Portfolio QR">
+                            <div class="qr-label">Portfolio Website</div>
+                        </div>
+                        <div class="qr-item">
+                            <img id="qrLinkedIn" width="80" height="80" alt="LinkedIn QR">
+                            <div class="qr-label">LinkedIn Profile</div>
+                        </div>
+                        <div class="qr-item">
+                            <img id="qrGitHub" width="80" height="80" alt="GitHub QR">
+                            <div class="qr-label">GitHub Profile</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="resume-footer">
+                <p>This resume was generated from my interactive portfolio at https://aryansbtloe.github.io/</p>
+                <p>© 2025 Alok Singh. All rights reserved.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Add QR Codes using a free API
+        function addQRCodes() {
+            const qrSection = document.getElementById('qrCodesSection');
+            qrSection.style.display = 'block';
+            
+            // Generate QR codes using qrcode.tec-it.com API (free, no key required)
+            const portfolioURL = 'https://aryansbtloe.github.io/';
+            const linkedInURL = 'https://www.linkedin.com/in/256261/';
+            const githubURL = 'https://github.com/aryansbtloe';
+            
+            document.getElementById('qrPortfolio').src = `https://api.qrserver.com/v1/create-qr-code/?size=80x80&data=${encodeURIComponent(portfolioURL)}`;
+            document.getElementById('qrLinkedIn').src = `https://api.qrserver.com/v1/create-qr-code/?size=80x80&data=${encodeURIComponent(linkedInURL)}`;
+            document.getElementById('qrGitHub').src = `https://api.qrserver.com/v1/create-qr-code/?size=80x80&data=${encodeURIComponent(githubURL)}`;
+            
+            alert('QR codes added! You can now print or download the PDF.');
+        }
+        
+        // Download as PDF (triggers browser print dialog)
+        function downloadPDF() {
+            window.print();
+        }
+        
+        // Instructions on load
+        window.addEventListener('load', () => {
+            console.log('📄 Interactive Resume PDF Generator Ready!');
+            console.log('💡 Tips:');
+            console.log('   1. Click "Add QR Codes" to include scannable links');
+            console.log('   2. Click "Print as PDF" and choose "Save as PDF"');
+            console.log('   3. All links are clickable in the PDF!');
+        });
+    </script>
+</body>
+</html>
+
