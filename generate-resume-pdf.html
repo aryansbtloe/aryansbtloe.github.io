@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generate Interactive Resume PDF</title>
+    <style>
+        /* PDF Resume Styles */
+        @page {
+            size: A4;
+            margin: 16mm 15mm 14mm 15mm;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: #f3f3f1;
+            padding: 20px;
+        }
+        
+        .resume-container {
+            max-width: 210mm;
+            margin: 0 auto;
+            background: #ffffff;
+            box-shadow: 0 2px 16px rgba(0,0,0,0.08);
+        }
+        
+        .resume-page {
+            width: 210mm;
+            min-height: 297mm;
+            padding: 18mm;
+            background: #ffffff;
+            color: #333333;
+            page-break-after: auto;
+        }
+        
+        .resume-page:last-child {
+            page-break-after: auto;
+        }
+        
+        /* Header Section */
+        .resume-header {
+            border-bottom: 1px solid #d8d8d4;
+            padding-bottom: 16px;
+            margin-bottom: 18px;
+            position: relative;
+        }
+        
+        .portfolio-qr {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 60px;
+            height: 60px;
+            background: transparent;
+        }
+        
+        .portfolio-qr img {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+        
+        .resume-name {
+            font-size: 32px;
+            font-weight: 700;
+            color: #222222;
+            margin-bottom: 8px;
+        }
+        
+        .resume-title {
+            font-size: 18px;
+            color: #555555;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+        
+        .resume-tagline {
+            font-size: 13px;
+            color: #666666;
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+        
+        .contact-info {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            font-size: 11px;
+            color: #444444;
+        }
+        
+        .contact-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .contact-item a {
+            color: #3d5a73;
+            text-decoration: none;
+        }
+        
+        /* Summary Section */
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-bottom: 18px;
+        }
+        
+        .summary-box {
+            background: #f6f6f4;
+            color: #333333;
+            padding: 12px;
+            border-radius: 6px;
+            text-align: center;
+            border: 1px solid #e6e6e2;
+        }
+        
+        .summary-box-label {
+            font-size: 9px;
+            opacity: 0.9;
+            margin-bottom: 4px;
+        }
+        
+        .summary-box-value {
+            font-size: 16px;
+            font-weight: 700;
+        }
+        
+        /* Section Styles */
+        .section {
+            margin-bottom: 18px;
+        }
+        
+        .section-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: #222222;
+            margin-bottom: 12px;
+            padding-bottom: 6px;
+            border-bottom: 1px solid #d8d8d4;
+        }
+        
+        .section-title a {
+            color: #3d5a73;
+        }
+        
+        /* Skills Grid */
+        .skills-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+        
+        .skill-item {
+            background: #f7f7f5;
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 10px;
+            border: 1px solid #e6e6e2;
+        }
+        
+        .skill-title {
+            font-weight: 600;
+            color: #222222;
+            margin-bottom: 4px;
+        }
+        
+        .skill-desc {
+            color: #666666;
+            font-size: 9px;
+            line-height: 1.4;
+        }
+        
+        /* Experience */
+        .experience-item {
+            margin-bottom: 14px;
+            page-break-inside: auto;
+            break-inside: auto;
+        }
+
+        .experience-item.featured {
+            padding: 8px 10px;
+            border: 1px solid #e0e0dc;
+            border-radius: 6px;
+            background: #fafaf8;
+        }
+
+        .experience-featured-label {
+            font-size: 9px;
+            font-weight: 700;
+            color: #666666;
+            margin-bottom: 4px;
+            letter-spacing: 0.02em;
+        }
+        
+        .experience-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 8px;
+        }
+        
+        .experience-left {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+        
+        .company-logo {
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            object-fit: contain;
+            background: transparent;
+            padding: 0;
+            flex-shrink: 0;
+        }
+        
+        .experience-company {
+            font-size: 13px;
+            font-weight: 700;
+            color: #222222;
+        }
+        
+        .experience-period {
+            font-size: 10px;
+            color: #666666;
+            white-space: nowrap;
+        }
+        
+        .experience-title {
+            font-size: 11px;
+            color: #444444;
+            font-weight: 600;
+            margin-bottom: 2px;
+        }
+        
+        .experience-location {
+            font-size: 9px;
+            color: #666666;
+            margin-bottom: 6px;
+        }
+        
+        .experience-list {
+            list-style: none;
+            padding-left: 0;
+        }
+        
+        .experience-list li {
+            font-size: 10px;
+            color: #333333;
+            line-height: 1.5;
+            margin-bottom: 4px;
+            padding-left: 12px;
+            position: relative;
+        }
+        
+        .experience-list li::before {
+            content: "•";
+            position: absolute;
+            left: 0;
+            color: #888888;
+            font-weight: bold;
+        }
+        
+        /* Keyword highlighting - simplified */
+        .highlight {
+            background: #eeebe4;
+            color: #222222;
+            padding: 1px 4px;
+            border-radius: 3px;
+            font-weight: 600;
+            font-size: 0.95em;
+        }
+        
+        .achievements {
+            margin-top: 6px;
+        }
+        
+        .achievements-title {
+            font-size: 10px;
+            font-weight: 600;
+            color: #222222;
+            margin-bottom: 4px;
+        }
+        
+        .achievement-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+        
+        .achievement-tag {
+            background: #f0f0ec;
+            color: #333333;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 8px;
+            font-weight: 500;
+            border: 1px solid #e2e2dc;
+        }
+        
+        /* Technical Skills */
+        .tech-category {
+            margin-bottom: 10px;
+        }
+        
+        .tech-category-title {
+            font-size: 11px;
+            font-weight: 600;
+            color: #222222;
+            margin-bottom: 4px;
+        }
+        
+        .tech-items {
+            font-size: 10px;
+            color: #555555;
+            line-height: 1.5;
+        }
+        
+        .tech-items a {
+            color: #3d5a73;
+            text-decoration: none;
+        }
+        
+        /* Open Source & Community */
+        .open-source-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+        
+        .open-source-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            background: #f7f7f5;
+            padding: 6px 10px;
+            border-radius: 6px;
+            border: 1px solid #e6e6e2;
+            page-break-inside: avoid;
+        }
+        
+        .open-source-title {
+            font-size: 10px;
+            font-weight: 600;
+            color: #222222;
+            margin-bottom: 0;
+            white-space: nowrap;
+        }
+        
+        .open-source-desc {
+            font-size: 8px;
+            color: #666666;
+            margin: 0;
+        }
+        
+        .open-source-meta {
+            min-width: 0;
+        }
+        
+        .open-source-link a {
+            font-size: 8px;
+            color: #3d5a73;
+            text-decoration: none;
+            white-space: nowrap;
+        }
+        
+        /* Apps Grid */
+        .apps-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+        }
+        
+        .app-item {
+            background: #f7f7f5;
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 9px;
+            text-align: center;
+            border: 1px solid #e6e6e2;
+            page-break-inside: avoid;
+            break-inside: avoid;
+        }
+        
+        .app-name {
+            font-weight: 600;
+            color: #222222;
+            margin-bottom: 3px;
+        }
+        
+        .app-category {
+            color: #666666;
+            font-size: 8px;
+            margin-bottom: 3px;
+        }
+        
+        .app-rating {
+            color: #555555;
+            font-size: 8px;
+        }
+        
+        /* Product logos */
+        .product-logo-large {
+            width: 48px;
+            height: 48px;
+            border-radius: 8px;
+            object-fit: contain;
+            background: white;
+            padding: 6px;
+            margin: 0 auto 8px auto;
+            display: block;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+        
+        /* Footer */
+        .resume-footer {
+            margin-top: 10px;
+            padding-top: 8px;
+            border-top: 1px solid #e0e0dc;
+            text-align: center;
+            font-size: 8px;
+            color: #888888;
+            page-break-inside: avoid;
+        }
+        
+        /* QR Code Section */
+        .qr-section {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 20px;
+            padding: 15px;
+            background: #f7f7f5;
+            border-radius: 6px;
+            border: 1px solid #e6e6e2;
+        }
+        
+        .qr-item {
+            text-align: center;
+        }
+        
+        .qr-label {
+            font-size: 9px;
+            color: #666666;
+            margin-top: 8px;
+        }
+        
+        /* Print Styles */
+        @media print {
+            body {
+                background: #ffffff !important;
+                padding: 0;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            
+            .resume-container {
+                box-shadow: none;
+            }
+            
+            .resume-page {
+                background: #ffffff !important;
+                color: #333333 !important;
+                width: auto;
+                min-height: 0 !important;
+                padding: 0 !important;
+            }
+            
+            .no-print {
+                display: none;
+            }
+        }
+        
+        /* Control Panel */
+        .control-panel {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #ffffff;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            border: 1px solid #e6e6e2;
+            z-index: 1000;
+        }
+        
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 12px 20px;
+            margin-bottom: 10px;
+            background: #4a5560;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        
+        .btn:hover {
+            background: #3a434c;
+        }
+        
+        .btn-secondary {
+            background: #ecece8;
+            color: #333333;
+        }
+        
+        .btn-secondary:hover {
+            background: #e0e0dc;
+        }
+    </style>
+</head>
+<body>
+    <!-- Control Panel -->
+    <div class="control-panel no-print">
+        <button class="btn" onclick="window.print()">📄 Print as PDF</button>
+        <button class="btn btn-secondary" onclick="downloadPDF()">💾 Download PDF</button>
+        <button class="btn btn-secondary" onclick="addQRCodes()">📱 Add QR Codes</button>
+    </div>
+
+    <!-- Resume Container -->
+    <div class="resume-container" id="resumeContent">
+        <!-- Page 1 -->
+        <div class="resume-page">
+            <!-- Header -->
+            <div class="resume-header">
+                <div class="portfolio-qr">
+                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&bgcolor=ffffff&color=222222&data=https://bestlatestapps.com/alok/" alt="Portfolio QR Code">
+                </div>
+                <h1 class="resume-name">Alok Singh</h1>
+                <div class="resume-title">Lead Software Engineer · Ex-Grab · Mobile, Web & Backend</div>
+                <div class="resume-tagline">Currently SDE 4 at PRISM. 5 years at Grab on Consumer, Driver, and Merchant. 15+ years, 50+ apps shipped.</div>
+                <div class="contact-info">
+                    <div class="contact-item">
+                        📧 <a href="mailto:alok.singh.confident@gmail.com">alok.singh.confident@gmail.com</a>
+                    </div>
+                    <div class="contact-item">
+                        📱 +91 8287757210
+                    </div>
+                    <div class="contact-item">
+                        📍 Gurugram, India
+                    </div>
+                    <div class="contact-item">
+                        💼 <a href="https://www.linkedin.com/in/256261/">LinkedIn</a>
+                    </div>
+                    <div class="contact-item">
+                        🐙 <a href="https://github.com/aryansbtloe">GitHub</a>
+                    </div>
+                    <div class="contact-item">
+                        🌐 <a href="https://bestlatestapps.com/alok/">Portfolio</a>
+                    </div>
+                    <div class="contact-item">
+                        📱 <a href="https://apps.apple.com/us/developer/alok-singh/id1508795536">App Store</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Summary Cards -->
+            <div class="summary-grid">
+                <div class="summary-box">
+                    <div class="summary-box-label">Total Experience</div>
+                    <div class="summary-box-value">15+ Years</div>
+                </div>
+                <div class="summary-box">
+                    <div class="summary-box-label">Platforms</div>
+                    <div class="summary-box-value">iOS · Android · Web</div>
+                </div>
+                <div class="summary-box">
+                    <div class="summary-box-label">How I ship</div>
+                    <div class="summary-box-value">AI-native</div>
+                </div>
+                <div class="summary-box">
+                    <div class="summary-box-label">Education</div>
+                    <div class="summary-box-value">B. Tech, ECE · SCITM</div>
+                </div>
+            </div>
+
+            <!-- Skills Section -->
+            <div class="section">
+                <h2 class="section-title">Core Competencies</h2>
+                <div class="skills-grid">
+                    <div class="skill-item">
+                        <div class="skill-title">📱 iOS</div>
+                        <div class="skill-desc">Swift, SwiftUI, UIKit, Objective-C</div>
+                    </div>
+                    <div class="skill-item">
+                        <div class="skill-title">🤖 Android</div>
+                        <div class="skill-desc">Kotlin, Compose, Room, KMP</div>
+                    </div>
+                    <div class="skill-item">
+                        <div class="skill-title">🌐 Web & Backend</div>
+                        <div class="skill-desc">React Native, REST, Spring Boot</div>
+                    </div>
+                    <div class="skill-item">
+                        <div class="skill-title">✨ AI-native</div>
+                        <div class="skill-desc">Cursor, agents, vibe-code then verify</div>
+                    </div>
+                    <div class="skill-item">
+                        <div class="skill-title">⚡ Architecture</div>
+                        <div class="skill-desc">MVVM, MVI, VIPER, Clean, RIBs</div>
+                    </div>
+                    <div class="skill-item">
+                        <div class="skill-title">🚀 CI/CD</div>
+                        <div class="skill-desc">Fastlane, Xcode Cloud, GitHub Actions</div>
+                    </div>
+                </div>
+            </div>
+
+
+            <!-- Professional Experience -->
+            <div class="section">
+                <h2 class="section-title">Professional Experience</h2>
+                
+                <!-- PRISM -->
+                <div class="experience-item">
+                    <div class="experience-header">
+                        <div class="experience-left">
+                            <img src="logos/companies/prism.png" alt="PRISM" class="company-logo" onerror="this.style.display='none'">
+                            <div>
+                                <div class="experience-company">PRISM</div>
+                                <div class="experience-title">SDE 4</div>
+                                <div class="experience-location">📍 Gurugram, India • Full-time</div>
+                            </div>
+                        </div>
+                        <div class="experience-period">Apr 2026 – Present</div>
+                    </div>
+                    <ul class="experience-list">
+                        <li>Senior mobile engineer on large-scale consumer systems</li>
+                        <li>Shipping iOS features and mentoring across the engineering org</li>
+                    </ul>
+                </div>
+
+                <!-- Grab -->
+                <div class="experience-item featured">
+                    <div class="experience-featured-label">5 YEARS · PRIMARY EXPERIENCE</div>
+                    <div class="experience-header">
+                        <div class="experience-left">
+                            <img src="logos/companies/grab.png" alt="Grab" class="company-logo" onerror="this.style.display='none'">
+                            <div>
+                                <div class="experience-company">Grab</div>
+                                <div class="experience-title">Senior Software Engineer</div>
+                                <div class="experience-location">📍 Singapore/Bangalore • Full-time</div>
+                            </div>
+                        </div>
+                        <div class="experience-period">Jan 2021 – Mar 2026</div>
+                    </div>
+                    <ul class="experience-list">
+                        <li>Revamped <span class="highlight">legacy modules</span> across Consumer, Driver, and Merchant apps, improving performance, maintainability, and developer experience</li>
+                        <li>Enhanced code quality by significantly improving <span class="highlight">Unit test, UI test, and snapshot test coverage</span></li>
+                        <li>Led end-to-end <span class="highlight">CI/CD development</span>, establishing efficient pipelines to support continuous integration, automated testing, and smooth deployment workflows</li>
+                        <li>Collaborated cross-functionally with product managers, designers, and other engineering teams to design and implement <span class="highlight">scalable software solutions using RIB, MVVM, VIPER, and Clean Architecture</span>, boosting system performance and user satisfaction</li>
+                        <li>Mentored <span class="highlight">junior engineers</span>, encouraging growth through code reviews, technical guidance, and promoting Agile and software development best practices</li>
+                        <li>Conducted regular <span class="highlight">code reviews</span>, implementing QA measures that increased code quality and reduced production issues</li>
+                        <li>Led <span class="highlight">system migrations</span> from legacy architectures to modern solutions, improving scalability and reducing long-term operational costs</li>
+                        <li>Integrated <span class="highlight">modern payment methods</span>, expanding financial functionality and improving the overall payment experience for users</li>
+                        <li>Led patenting meetings as the <span class="highlight">patent champion</span>, fostering a culture of innovation and IP development</li>
+                    </ul>
+                    <div class="achievements">
+                        <div class="achievements-title">🏆 Key Achievements:</div>
+                        <div class="achievement-tags">
+                            <span class="achievement-tag">Patent Champion - Led innovation initiatives</span>
+                            <span class="achievement-tag">Improved CI/CD efficiency by 40%</span>
+                            <span class="achievement-tag">Reduced production issues by 50% through code reviews</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- OYO -->
+                <div class="experience-item" style="margin-bottom: 8px;">
+                    <div class="experience-header">
+                        <div class="experience-left">
+                            <img src="logos/companies/prism.png" alt="PRISM" class="company-logo" onerror="this.style.display='none'">
+                            <div>
+                                <div class="experience-company">PRISM</div>
+                                <div class="experience-title">SDE 2 → SDE 3 · iOS, Backend</div>
+                                <div class="experience-location">📍 Gurugram, India • Product: OYO Rooms</div>
+                            </div>
+                        </div>
+                        <div class="experience-period">Nov 2018 – Jan 2021</div>
+                    </div>
+                    <ul class="experience-list">
+                        <li>Individual contributor responsible for core development of OYO's consumer-facing iOS app in a fast-paced, large-scale environment</li>
+                        <li>Led multiple major product revamps over 2 years, resulting in significantly improved user experience and app performance</li>
+                        <li>Improved <span class="highlight">App Store rating from 3.7 to 4.7</span>, driven by UX improvements, crash reduction, and performance enhancements</li>
+                        <li>Implemented <span class="highlight">unit testing infrastructure</span>, increasing code coverage from 4% to 32%, greatly improving reliability and confidence in code changes</li>
+                        <li>Enhanced app architecture by introducing and refining <span class="highlight">VIPER, MVVM, RIB, and Clean Architecture</span>, improving modularity, testability, and long-term maintainability</li>
+                        <li>Strengthened app security through implementation of SSL pinning and fraud detection mechanisms</li>
+                        <li>Contributed to widgetization and modularization, improving feature scalability and reducing code duplication</li>
+                        <li>Maintained <span class="highlight">>99.97% crash-free sessions</span>, improving app stability and reducing user complaints</li>
+                        <li>Mentored <span class="highlight">10+ engineers</span>, providing guidance on architecture, code quality, Agile methodologies, and best practices</li>
+                        <li>Owned end-to-end iOS release lifecycle — from development, testing, and deployment to App Store submission, crash analysis, and stability monitoring</li>
+                    </ul>
+                    <div class="achievements" style="margin-top: 4px;">
+                        <div class="achievements-title">🏆 Key Achievements:</div>
+                        <div class="achievement-tags">
+                            <span class="achievement-tag">App Store Rating: 3.7 → 4.7 (27% improvement)</span>
+                            <span class="achievement-tag">Test Coverage: 4% → 32% (700% increase)</span>
+                            <span class="achievement-tag">Crash-free Sessions: >99.97%</span>
+                            <span class="achievement-tag">Mentored 10+ engineers</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Previous Experiences -->
+                <div class="experience-item" style="margin-top: 10px; margin-bottom: 4px;">
+                    <div class="experience-header">
+                        <div class="experience-left">
+                            <img src="logos/default.svg" alt="Previous Companies" class="company-logo" onerror="this.style.display='none'">
+                            <div>
+                                <div class="experience-company">Previous Experiences</div>
+                                <div class="experience-title">iOS Developer · Sr. iOS Developer</div>
+                                <div class="experience-location">📍 India • Full-time</div>
+                            </div>
+                        </div>
+                        <div class="experience-period">Apr 2011 – Nov 2018</div>
+                    </div>
+                    <div style="font-size: 10px; color: #6e6e73; margin-bottom: 8px; font-style: italic;">
+                        GlobalLogic / Kohl's (Oct 2017 – Oct 2018) • Orahi (Feb 2016 – Sep 2017) • AppInventiv (Feb 2014 – Jan 2016) • Konstant Infosolutions (Mar 2013 – Feb 2014) • Ayansys Solutions (Apr 2011 – Mar 2013)
+                    </div>
+                    <ul class="experience-list">
+                        <li>Led end-to-end iOS application development as a standalone contributor, from architecture and UI/UX design to deployment and maintenance</li>
+                        <li>Participated in UI design and user behavior analysis, contributing to data-driven decisions for feature enhancements and customer experience improvements</li>
+                        <li>Designed and optimized <span class="highlight">fraud detection algorithms</span> and improved app security practices</li>
+                        <li>Actively involved in pre-sales efforts, assisting the business analysis team in gathering requirements, evaluating technical feasibility, and scoping projects</li>
+                        <li>Played a key role in <span class="highlight">hiring and onboarding</span>, conducting interviews, evaluating new graduates, and mentoring junior developers</li>
+                        <li>Contributed to software architecture discussions, driving decisions around best practices for <span class="highlight">scalable, maintainable codebases using RIB, MVVM, VIPER, and Clean Architecture</span></li>
+                        <li>Ensured high product quality through rigorous testing and debugging, maintaining stability across releases</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Technical Skills -->
+            <div class="section">
+                <h2 class="section-title">Technical Skills</h2>
+                <div class="tech-category">
+                    <div class="tech-category-title">Languages:</div>
+                    <div class="tech-items">Swift, Kotlin, Objective-C, Java, JavaScript, C++, C</div>
+                </div>
+                <div class="tech-category">
+                    <div class="tech-category-title">Platforms:</div>
+                    <div class="tech-items">iOS, Android, Web, Backend, React Native, Flutter, Spring Boot, macOS</div>
+                </div>
+                <div class="tech-category">
+                    <div class="tech-category-title">Tools & Technologies:</div>
+                    <div class="tech-items">Cursor, Xcode, Android Studio, VS Code, IntelliJ, Charles, Postman, SQLite, Core Data, Realm, Room, MySQL</div>
+                </div>
+                <div class="tech-category">
+                    <div class="tech-category-title">CI/CD & Quality:</div>
+                    <div class="tech-items">Fastlane, GitHub Actions, Xcode Cloud, SonarQube, Firebase, DataDog, Google Analytics</div>
+                </div>
+            </div>
+
+            <!-- Open Source & Community -->
+            <div class="section">
+                <h2 class="section-title">Open Source & Community</h2>
+                <div class="open-source-grid">
+                    <div class="open-source-item">
+                        <div class="open-source-meta">
+                            <div class="open-source-title">🐙 GitHub</div>
+                            <div class="open-source-desc">Public repos and contributions</div>
+                        </div>
+                        <div class="open-source-link"><a href="https://github.com/aryansbtloe" target="_blank">github.com/aryansbtloe</a></div>
+                    </div>
+                    <div class="open-source-item">
+                        <div class="open-source-meta">
+                            <div class="open-source-title">📝 Blog</div>
+                            <div class="open-source-desc">iOS insights and tutorials</div>
+                        </div>
+                        <div class="open-source-link"><a href="https://medium.com/@alok.singh.confident" target="_blank">medium.com/@alok.singh.confident</a></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- QR Codes Section (will be added dynamically) -->
+            <div id="qrCodesSection" style="display: none; page-break-inside: avoid;">
+                <div class="section">
+                    <h2 class="section-title">Quick Access</h2>
+                    <div class="qr-section">
+                        <div class="qr-item">
+                            <img id="qrPortfolio" width="80" height="80" alt="Portfolio QR">
+                            <div class="qr-label">Portfolio Website</div>
+                        </div>
+                        <div class="qr-item">
+                            <img id="qrLinkedIn" width="80" height="80" alt="LinkedIn QR">
+                            <div class="qr-label">LinkedIn Profile</div>
+                        </div>
+                        <div class="qr-item">
+                            <img id="qrGitHub" width="80" height="80" alt="GitHub QR">
+                            <div class="qr-label">GitHub Profile</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="resume-footer">
+                <p>This resume was generated from my interactive portfolio at https://bestlatestapps.com/alok/</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Add QR Codes using a free API
+        function addQRCodes() {
+            const qrSection = document.getElementById('qrCodesSection');
+            qrSection.style.display = 'block';
+            
+            // Generate QR codes using qrcode.tec-it.com API (free, no key required)
+            const portfolioURL = 'https://bestlatestapps.com/alok/';
+            const linkedInURL = 'https://www.linkedin.com/in/256261/';
+            const githubURL = 'https://github.com/aryansbtloe';
+            
+            document.getElementById('qrPortfolio').src = `https://api.qrserver.com/v1/create-qr-code/?size=80x80&data=${encodeURIComponent(portfolioURL)}`;
+            document.getElementById('qrLinkedIn').src = `https://api.qrserver.com/v1/create-qr-code/?size=80x80&data=${encodeURIComponent(linkedInURL)}`;
+            document.getElementById('qrGitHub').src = `https://api.qrserver.com/v1/create-qr-code/?size=80x80&data=${encodeURIComponent(githubURL)}`;
+            
+            alert('QR codes added! You can now print or download the PDF.');
+        }
+        
+        // Download as PDF (triggers browser print dialog)
+        function downloadPDF() {
+            window.print();
+        }
+        
+        // Instructions on load
+        window.addEventListener('load', () => {
+            console.log('📄 Interactive Resume PDF Generator Ready!');
+            console.log('💡 Tips:');
+            console.log('   1. Click "Add QR Codes" to include scannable links');
+            console.log('   2. Click "Print as PDF" and choose "Save as PDF"');
+            console.log('   3. All links are clickable in the PDF!');
+        });
+    </script>
+</body>
+</html>
+
